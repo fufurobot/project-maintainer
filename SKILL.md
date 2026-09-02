@@ -1,4 +1,4 @@
-
+```markdown
 ---
 name: project-maintainer
 description: A role that works over Git repositories in a Test Driven Development way.
@@ -12,15 +12,17 @@ Instructions for the agent to follow when this skill is activated.
 
 Use this skill when you are asked to implement a feature, fix a bug, or perform any code change in a Git repository while strictly following TDD principles and a disciplined commit policy. The skill automatically detects the build/test system, enforces pre‑commit hooks, and guides you through a commit loop that ensures every change is properly tested and documented.
 
-## Instructions
+---
 
-### 0. Repository Setup and Branching
+## 0. Repository Setup and Branching
 
 1. **Clone the repository** (if not already present) using the provided URL or local path.
 2. **Create a new working branch** with a name that reflects the user’s requirement (e.g., `feature/xxx`, `fix/xxx`, or a short descriptive slug). Use the user’s description to generate the branch name.
 3. **Identify the default branch** (usually `main`, `master`, or `trunk`) and note its commit hash.
 
-### 1. Detect Build and Test System
+---
+
+## 1. Detect Build and Test System
 
 Scan the repository root to determine how the project is built and tested. Look for the following files, in order of precedence:
 
@@ -40,7 +42,9 @@ Scan the repository root to determine how the project is built and tested. Look 
 - The command(s) to run tests.
 - The command to run a single test file or specific test (if discoverable).
 
-### 2. Install Git Pre‑commit Hook for TDD Discipline
+---
+
+## 2. Install Git Pre‑commit Hook for TDD Discipline
 
 If no pre‑commit hook exists, **create one** (at `.git/hooks/pre-commit`) that enforces the following rules. The hook should abort the commit if any rule is violated.
 
@@ -49,11 +53,13 @@ The hook must:
 - Prevent commits that touch **both** `src/` and `tests/` directories (or equivalent, e.g., `lib/` and `spec/`). A commit may touch files only from one of these two categories.
 - Validate that the commit message follows the type‑based convention (see rules below).
 - Enforce the file‑count rule: a commit must touch **at most one file** (excluding binary files, documentation, or configuration files if the project allows exceptions – but for code, it’s strictly one file per commit). If multiple files are staged, the commit should be rejected.
-- Allow the `[WIP]` label – see rules below.
+- Allow the `[WIP]` label – see rules below. **The hook does not check test pass/fail status**; that responsibility lies with the agent.
 
 **Implement the hook** in a shell script or using a language appropriate for the environment. The hook must parse the staged files and the commit message.
 
-### 3. Commit Message and Type Rules
+---
+
+## 3. Commit Message and Type Rules
 
 Define the commit message format as:
 
@@ -64,7 +70,7 @@ Define the commit message format as:
 [optional goal: ... for WIP commits]
 ```
 
-#### Allowed commit types:
+### Allowed commit types
 
 **Types that can touch `tests/` (only these three)**:
 - `feature-request` – adding a test for a new feature that does not exist yet.
@@ -79,26 +85,41 @@ Define the commit message format as:
 
 **Additional constraints**:
 
-- A commit that touches `src/` **must** make all tests pass (or at least the relevant test suite) unless it is a `major-refactor` or `minor-refactor` (these do not require new passing tests, but they must not break existing tests).
-- For `feature-impl` commits, the commit message **must** reference the test that was previously failing (e.g., “Implements feature X, passing test Y”).
-- A `src` commit that has the **previous commit** (i.e., the immediate parent) also being a `src` commit **must not** be labelled `feature-impl`. This prevents chaining implementations without intervening test‑first steps. Use `major-refactor`, `minor-refactor`, or `bug-fix` instead.
+- A commit that touches `src/` **must** make all tests pass (or at least the relevant test suite) **unless** it is marked `[WIP]` (see WIP rules below).
+- For non‑WIP `feature-impl` commits, the commit message **must** reference the test that was previously failing (e.g., “Implements feature X, passing test Y”).
+- A non‑WIP `src` commit that has the **previous commit** (i.e., the immediate parent) also being a `src` commit **must not** be labelled `feature-impl`. This prevents chaining implementations without intervening test‑first steps. Use `major-refactor`, `minor-refactor`, or `bug-fix` instead.
 
-**WIP (Work In Progress) commits**:
+---
 
-- A commit may be prefixed with `[WIP]` (e.g., `[WIP] feature-request: ...`).
-- Every `[WIP]` commit must include a `goal:` section in the commit body that states the overall objective of this sequence.
-- If the previous commit is also `[WIP]`, the `goal:` must be **exactly identical** to ensure continuity.
-- `[WIP]` commits are exempt from the “only one file” rule only if all changes are within the same logical area (but the hook may still enforce single‑file for simplicity; if multiple files are needed, the agent should split them into separate `[WIP]` commits).
+### WIP (Work In Progress) Commits – Escape Hatch
 
-### 4. Soft Constraints and Encouraged Practices
+A commit may be prefixed with `[WIP]` (e.g., `[WIP] feature-impl: ...`).  
+WIP commits are **temporary** and serve as an escape hatch when you need to checkpoint work that does **not** yet satisfy all TDD requirements.
+
+**WIP‑specific rules**:
+
+1. **No test‑pass requirement** – you may commit code in `src/` even if tests are failing or not yet written. The agent is **not** required to run tests before committing a WIP.
+2. **Single‑file rule** – the hook still enforces at most one file per commit, but you may split multi‑file changes across multiple WIP commits.
+3. **Message format** – every `[WIP]` commit must include a `goal:` section in the commit body that states the overall objective of this sequence. If the previous commit is also `[WIP]`, the `goal:` must be **exactly identical** to ensure continuity.
+4. **Cleanup required** – before generating the final patch, all WIP commits **must** be removed (e.g., via interactive rebase, squash, or rewriting) and replaced with proper, non‑WIP commits that follow all TDD rules. The final patch shall contain **no WIP commits** and all tests must pass.
+
+**Purpose**: WIP allows you to make progress without being blocked by test failures or strict atomicity. Use it sparingly and always clean up.
+
+---
+
+## 4. Soft Constraints and Encouraged Practices
 
 - **Commit message explanations**: Whenever possible, include a short explanation of the test‑failure output that motivated the change (especially for `feature-impl` commits). For `minor-refactor` commits, explain what the minor change improves (e.g., readability, performance, maintainability).
-- For `feature-impl` commits, the commit message **must** reference the previously failing test(s) and include the actual error output if useful.
+- For non‑WIP `feature-impl` commits, the commit message **must** reference the previously failing test(s) and include the actual error output if useful.
 - Commits that are not `feature-impl` and do not make new tests pass should still include a rationale.
 
-### 5. The Commit Loop
+---
 
-Once the pre‑commit hook is in place and the build/test commands are known, the agent enters a **commit loop**:
+## 5. The Commit Loop (with WIP)
+
+Once the pre‑commit hook is in place and the build/test commands are known, the agent enters a **commit loop**. The loop is driven by the TDD rhythm, but WIP commits provide flexibility.
+
+**Standard (non‑WIP) cycle**:
 
 1. **Start with a test commit** – Choose one of the test‑touching types (`feature-request`, `architecture-change`, or `bug-reproduction`) and write a failing test (or a set of tests) in a single file under `tests/`. Commit with a proper message.
 2. **Run the tests** to confirm they fail.
@@ -108,11 +129,19 @@ Once the pre‑commit hook is in place and the build/test commands are known, th
 6. **Refactoring** – At any point, you may insert a `minor-refactor` or `major-refactor` commit (touching only `src/` or only `tests/` as appropriate) as long as it does not break tests.
 7. **Complete** – Continue until the user’s requirement is fully implemented and all tests pass.
 
-**Important**: Each commit must be atomic and self‑contained. If a change spans multiple files, break it into multiple commits (with `[WIP]` if necessary).
+**Using WIP as an escape hatch**:
 
-### 6. Final Patch and Completion
+- If you need to save work before finishing the implementation (e.g., you are in the middle of a complex change and tests are failing), you may create a `[WIP]` commit.
+- WIP commits can touch `src/` without passing tests, and they do not need a preceding test commit.
+- You may chain multiple WIP commits; each must have the same `goal:`.
+- Once you have a solid state, you can continue development, eventually removing all WIP commits via rebase and replacing them with proper TDD commits.
+- **Important**: The final state of the branch must have **no WIP commits** and all tests must pass. The agent is responsible for cleaning up before generating the patch.
 
-After the commit loop is finished and all tests pass:
+---
+
+## 6. Final Patch and Completion
+
+After the commit loop is finished and all tests pass (and all WIP commits have been eliminated):
 
 1. **Produce a unified diff** comparing the working branch with the default branch. Use:
    ```bash
@@ -129,7 +158,7 @@ The coding task is then considered complete.
 
 ---
 
-## Example Workflow
+## Example Workflow (with WIP)
 
 1. User says: “Add a login feature to the Python project.”
 2. Agent clones repo, creates branch `feature/login`.
@@ -141,9 +170,15 @@ The coding task is then considered complete.
 7. Implements login in `src/login.py` to pass the test.
    - Commit: `feature-impl: implement login, passing test_login`
    - Message includes the test failure output.
-8. Repeats for additional cases (e.g., invalid credentials).
-9. Eventually refactors (e.g., `minor-refactor: rename variable for clarity`).
-10. All tests pass; generates `patch.diff` and notifies user.
+8. Realises more complex logic is needed; writes partial code that does not yet pass all tests. Uses WIP to save progress:
+   - Commit: `[WIP] feature-impl: partial implementation of password hashing
+     
+     goal: complete login with password hashing`
+9. Continues working, eventually finishes the implementation.
+10. Runs tests – they pass.
+11. Rebases interactively to squash the WIP commit into the previous `feature-impl` commit, leaving a clean history.
+12. Optionally refactors (e.g., `minor-refactor: rename variable for clarity`).
+13. All tests pass; generates `patch.diff` and notifies user.
 
 ---
 
@@ -152,7 +187,9 @@ The coding task is then considered complete.
 - Always verify that the pre‑commit hook is executable (`chmod +x .git/hooks/pre-commit`).
 - If the project uses a sub‑directory for source and tests (e.g., `lib/` and `spec/`), adapt accordingly.
 - If the build system is not recognised, ask the user for the correct commands.
-- Ensure you never commit anything that leaves the repository in a broken state (tests must pass after each `src` commit).
+- Ensure you never commit anything that leaves the repository in a broken state **unless it is a WIP commit** – and remember to clean up WIP before final delivery.
 - Use `git add -p` or `git add <file>` explicitly to stage only the intended file per commit.
+- After using WIP, always rebase or amend to produce a clean, logical commit history that follows TDD principles.
 
-By following these instructions, you will deliver a well‑tested, cleanly‑committed patch that adheres to strict TDD and Git discipline.
+By following these instructions, you will deliver a well‑tested, cleanly‑committed patch that adheres to strict TDD and Git discipline, while having the flexibility to checkpoint work‑in‑progress when needed.
+```

@@ -1,4 +1,4 @@
-```markdown
+
 ---
 name: project-maintainer
 description: A role that works over Git repositories in a Test Driven Development way.

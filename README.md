@@ -37,5 +37,6 @@ the finetuning only happens when there is an GPU backend (*-smi) available, in o
 - [ ] merge the multiple skill content markdown file into a single SKILL.md file
 - [ ] add a entrypoint to install pre commit and post commit hooks (linting and type check for pre commit, smoke test for post commit)
 - [ ] add a entrypoint to help users for boilerplates
-- [ ] add a default model and ship the gguf inside the python wheel (qwen3.5:0.8b) so that the package can booststrap itself
-- [ ] finetune qwen3.5:0.8b for the TDD dispiline by reinforincement learning (dog fooding).
+- [ ] publish an github release for python wheels v0.1.0
+- [ ] add a default model and ship the gguf inside the python wheel (qwen3.5:0.8b) so that the package can booststrap itself, publish v0.1.1
+- [ ] finetune qwen3.5:0.8b for the TDD dispiline by reinforincement learning (dog fooding), publish v0.1.x

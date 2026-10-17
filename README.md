@@ -30,4 +30,12 @@ It is strictlly forbidden that the master model use itself as a LLM as a judge.
 
 If judge is required, find existing huggingface dataset and do SFT/DPO instead. 
 
+the finetuning only happens when there is an GPU backend (*-smi) available, in order to not occupy all cores on user's machine and make user can not do anything else. 
 
+# todos
+
+- [ ] merge the multiple skill content markdown file into a single SKILL.md file
+- [ ] add a entrypoint to install pre commit and post commit hooks (linting and type check for pre commit, smoke test for post commit)
+- [ ] add a entrypoint to help users for boilerplates
+- [ ] add a default model and ship the gguf inside the python wheel (qwen3.5:0.8b) so that the package can booststrap itself
+- [ ] finetune qwen3.5:0.8b for the TDD dispiline by reinforincement learning (dog fooding).
